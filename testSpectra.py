@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import h5py as h5
 import matplotlib.pyplot as plt
+import scipy.interpolate as inter
 from scipy.optimize import leastsq
 from scipy.fftpack import fft, ifft
 from scipy import signal
@@ -15,17 +16,31 @@ ap.add_argument("-fN",
                 help = "Path/filename of hdf5 file")
 ap.add_argument("-ds",
                 required=False,
-                default='Spectra/Spectrum   7/Auxiliary/QA',
+                default='Spectra/Spectrum   3/Auxiliary/QA',
                 type = str,
                 help = "Name of specific dataset to load")
 args = vars(ap.parse_args())
 
 
-def model(t,coeffs):
-  return coeffs[0]+coeffs[1]*np.exp(-1*((t-coeffs[2])/coeffs[3])**2)
+def H(x):
+  # Heavyside step function:
+  return 1*(x>0)
 
-def residuals(coeffs,y,t):
-  return y - model(t,coeffs)
+def model(t,tm,coefs):
+  # coefs = [eta1,eta2,m1,m2,,t1,tm,t2] ideally b&c are gone due to assumptions
+  eta1,eta2,m1,m2,t1,t2=coefs
+  a = eta1*(H(t)-H(t-t2))
+  b = eta2*(H(t-t2))
+  c = m1*t*(H(t-t1)-H(t-tm))
+  d = (m2*t+(tm*(m1-m2)))*(H(t-tm)-H(t-t2))
+  return a+b+c+d
+
+
+#def model(t,coeffs):
+#  return coeffs[0]+coeffs[1]*np.exp(-1*((t-coeffs[2])/coeffs[3])**2)
+
+def residuals(coeffs,y,t,tm):
+  return y - model(t,tm,coeffs)
 
 
 # Load the hdf5 datafile (df):
@@ -35,7 +50,12 @@ df = h5.File(args['fN'],'r')
 fName = args['ds']+'Amplitude'
 tName = args['ds']+'Time'
 ds = np.array(df[fName])
-t = np.array(df[tName])
+# For my model I want to make sure time is all positive...
+t = np.array(df[tName],dtype=float)
+print t[0]
+t = t-t[0]
+print t[0]
+
 dt = np.abs(t[1]-t[0])
 
 # Looking at DFT of ds:
@@ -53,25 +73,28 @@ print type(fWin),len(fWin)
 # Sooo... smoothing ?
 convDS = fds*fWin
 dsSmooth = ifft(convDS)
+tm = float(np.min(dsSmooth))
 
 print max(window)
 
 # Trying for a quick qaussian fit with least squares:
 # Nope didn't work with a gaussian model... no due
-#x0 = np.array([3,30,15,1],dtype=float)
-#x, flag = leastsq(residuals,x0,args=(ds,t))
+x0 = np.array([0,0,-2,2,0,3e-4],dtype=float)
+x, flag = leastsq(residuals,x0,args=(dsSmooth.real,t,tm))
 
-#f,ax = plt.subplots(1,1,sharex=True)
-#plt.plot(t,ds,t,model(t,x))
-#plt.show()
+print "x:" ,x
+
+y_ = model(t,tm,x)
 
 fig, ax = plt.subplots(2,1)
 ax[0].plot(window,'g')
-ax[1].plot(t,ds,'r',t,dsSmooth.real,'b')
+ax[1].plot(t,ds,'r',t,dsSmooth.real,'b',t,y_,'g')
 plt.savefig('signal.jpg',format='jpg')
 
-
-plt.hist(dsSmooth.real)
 plt.show()
+
+# Trying for a spline...
+
+
 
 df.close()
