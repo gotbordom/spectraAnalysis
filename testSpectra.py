@@ -15,7 +15,7 @@ ap.add_argument("-fN",
                 help = "Path/filename of hdf5 file")
 ap.add_argument("-ds",
                 required=False,
-                default='Spectra/Spectrum  10/Auxiliary/QA',
+                default='Spectra/Spectrum   7/Auxiliary/QA',
                 type = str,
                 help = "Name of specific dataset to load")
 args = vars(ap.parse_args())
@@ -45,7 +45,7 @@ ft = np.linspace(0.0, 1.0/(2.0*dt), len(ds)//2)
 print type(fds),len(fds)
 
 # Load a triangle wave and fft it:
-window = signal.triang(301)*.01
+window = signal.triang(401)*.01
 fWin = fft(window,len(fds))
 
 print type(fWin),len(fWin)
@@ -68,6 +68,10 @@ print max(window)
 fig, ax = plt.subplots(2,1)
 ax[0].plot(window,'g')
 ax[1].plot(t,ds,'r',t,dsSmooth.real,'b')
+plt.savefig('signal.jpg',format='jpg')
+
+
+plt.hist(dsSmooth.real)
 plt.show()
 
 df.close()
