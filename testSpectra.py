@@ -35,12 +35,20 @@ def model(t,tm,coefs):
   d = (m2*t+(tm*(m1-m2)))*(H(t-tm)-H(t-t2))
   return a+b+c+d
 
+def model1(t,coeffs):
+  # coeffs = [q,t1,tm,t2,eta]]
+  q,t1,tm,t2,eta=coeffs
+
+  a = eta*(H(t))
+  b = (q*t+q*t1)*(H(t-t1)-H(t-tm))
+  c = (-q*t+2*q*tm+q*t1)*(H(t-tm)-H(t-t2))
+  return b+c
 
 #def model(t,coeffs):
 #  return coeffs[0]+coeffs[1]*np.exp(-1*((t-coeffs[2])/coeffs[3])**2)
 
 def residuals(coeffs,y,t,tm):
-  return y - model(t,tm,coeffs)
+  return y - model1(t,tm,coeffs)
 
 
 # Load the hdf5 datafile (df):
@@ -73,28 +81,52 @@ print type(fWin),len(fWin)
 # Sooo... smoothing ?
 convDS = fds*fWin
 dsSmooth = ifft(convDS)
-tm = float(np.min(dsSmooth))
+tm = float(np.min(dsSmooth.real))
+tmInd = np.argmin(dsSmooth.real)
+print tmInd
 
 print max(window)
 
 # Trying for a quick qaussian fit with least squares:
 # Nope didn't work with a gaussian model... no due
-x0 = np.array([0,0,-2,2,0,3e-4],dtype=float)
-x, flag = leastsq(residuals,x0,args=(dsSmooth.real,t,tm))
+x0 = np.array([-0.5,1,2,3,1],dtype=float)
+#x, flag = leastsq(residuals,x0,args=(dsSmooth.real,t,tm))
 
-print "x:" ,x
+# Test the model to see if it plots well:
+testTime = np.arange(0,10,0.1)
+test = model1(testTime,x0)
+plt.plot(testTime,test)
 
-y_ = model(t,tm,x)
+#print "x:" ,x
 
-fig, ax = plt.subplots(2,1)
-ax[0].plot(window,'g')
-ax[1].plot(t,ds,'r',t,dsSmooth.real,'b',t,y_,'g')
-plt.savefig('signal.jpg',format='jpg')
-
+#y_ = model1(t,tm,x)
+# commenting out for now working with splines...
+#fig, ax = plt.subplots(2,1)
+#ax[0].plot(window,'g')
+#ax[1].plot(t,ds,'r',t,dsSmooth.real,'b',t,y_,'g')
+#ax[1].axhline(y=np.mean(dsSmooth.real),color='k',linestyle='-')
+#plt.savefig('signal.jpg',format='jpg')
+#
 plt.show()
 
 # Trying for a spline...
+# Over fits ... so I can't really find where the t-in and t-out are
+#tt = np.arange(0,t[-1],dt*1000)
+#print len(t),len(tt)
+#s1 = inter.InterpolatedUnivariateSpline(t,dsSmooth.real)
+#s1rev = inter.InterpolatedUnivariateSpline(t[::-1],dsSmooth.real[::-1])
+#s2 = inter.UnivariateSpline(t[::-1],dsSmooth.real[::-1],s=0.1)
 
+#plt.plot(t,dsSmooth.real,'r',label='Smooth data')
+#plt.plot(tt,s1(tt),'b--',label='Spline, wrong order')
+#plt.plot(tt,s1rev(tt),'g--',label='Spline, Correct order')
+#plt.plot(tt,s2(tt),'k-',label='Spline,fit')
 
+#plt.minorticks_on()
+#plt.legend()
+#plt.show()
+
+# Working on finding coeficientts for model1:
+# Need to find the b & c terms in the medel1 piecewise function:
 
 df.close()
