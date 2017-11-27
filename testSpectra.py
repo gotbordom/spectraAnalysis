@@ -16,7 +16,7 @@ ap.add_argument("-fN",
                 help = "Path/filename of hdf5 file")
 ap.add_argument("-ds",
                 required=False,
-                default='Spectra/Spectrum   3/Auxiliary/QA',
+                default='Spectra/Spectrum   7/Auxiliary/QA',
                 type = str,
                 help = "Name of specific dataset to load")
 args = vars(ap.parse_args())
@@ -44,11 +44,21 @@ def model1(t,coeffs):
   c = (-q*t+2*q*tm+q*t1)*(H(t-tm)-H(t-t2))
   return b+c
 
+def model2(t,coeffs):
+  # [amp,t1,tm,t2]
+  amp,t1,tm,t2=coeffs
+  y1 = amp/(tm-t1)
+  y2 = amp/(tm-t2)
+  
+  a = y1*(t-t1)*(H(t-t1)-H(t-tm))
+  b = y2*(t-t2)*(H(t-tm)-H(t-t2))
+  return a+b
+
 #def model(t,coeffs):
 #  return coeffs[0]+coeffs[1]*np.exp(-1*((t-coeffs[2])/coeffs[3])**2)
 
-def residuals(coeffs,y,t,tm):
-  return y - model1(t,tm,coeffs)
+def residuals(coeffs,y,t):
+  return y - model2(t,coeffs)
 
 
 # Load the hdf5 datafile (df):
@@ -89,22 +99,23 @@ print max(window)
 
 # Trying for a quick qaussian fit with least squares:
 # Nope didn't work with a gaussian model... no due
-x0 = np.array([-0.5,1,2,3,1],dtype=float)
-#x, flag = leastsq(residuals,x0,args=(dsSmooth.real,t,tm))
+x0 = np.array([-1,1,4,5],dtype=float)
+x, flag = leastsq(residuals,x0,args=(dsSmooth.real,t))
 
 # Test the model to see if it plots well:
 testTime = np.arange(0,10,0.1)
-test = model1(testTime,x0)
+test = model2(testTime,x0)
 plt.plot(testTime,test)
+plt.show()
 
 #print "x:" ,x
 
-#y_ = model1(t,tm,x)
+y_ = model2(t,x)
 # commenting out for now working with splines...
-#fig, ax = plt.subplots(2,1)
-#ax[0].plot(window,'g')
-#ax[1].plot(t,ds,'r',t,dsSmooth.real,'b',t,y_,'g')
-#ax[1].axhline(y=np.mean(dsSmooth.real),color='k',linestyle='-')
+fig, ax = plt.subplots(2,1)
+ax[0].plot(window,'g')
+ax[1].plot(t,ds,'r',t,dsSmooth.real,'b',t,y_,'g')
+ax[1].axhline(y=np.mean(dsSmooth.real),color='k',linestyle='-')
 #plt.savefig('signal.jpg',format='jpg')
 #
 plt.show()
