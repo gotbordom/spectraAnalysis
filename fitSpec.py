@@ -19,6 +19,12 @@ ap.add_argument("-ds",
                 default='   3',
                 type = str,
                 help = "Name of specific dataset to load")
+ap.add_argument("-t",
+                required=False,
+                default='??',
+                type = str,
+                help = "Name of Target for this data - helps organize saved files.")
+
 args = vars(ap.parse_args())
 
 
@@ -84,7 +90,10 @@ ax[0].set_title("Window for smoothing")
 ax[1].plot(t,ds,'r',t,dsSmooth.real,'b',t,y_,'k')
 ax[1].set_title("Data vs. Smoothed data w/ fitted line")
 
-#plt.savefig(,format='jpg')
+tmp = args['t']+sName.replace("/","_")
+tmp = tmp.replace(" ","0")
+print tmp
+plt.savefig(tmp+".jpg",format='jpg')
 
-plt.show()
+#plt.show()
 
