@@ -24,7 +24,11 @@ ap.add_argument("-t",
                 default='??',
                 type = str,
                 help = "Name of Target for this data - helps organize saved files.")
-
+ap.add_argument("-n",
+                required=False,
+                default='none',
+                type=str,
+                help = "What noise to use: none, mean or median. None is default.")
 args = vars(ap.parse_args())
 
 
@@ -33,14 +37,15 @@ def H(x):
   return 1*(x>0)
 
 def model2(t,coeffs):
-  # [amp,t1,tm,t2]
-  amp,t1,tm,t2=coeffs
+  # coeffs = [amp,noise,t1,tm,t2]
+  amp,noise,t1,tm,t2=coeffs
   y1 = amp/(tm-t1)
   y2 = amp/(tm-t2)
 
   a = y1*(t-t1)*(H(t-t1)-H(t-tm))
   b = y2*(t-t2)*(H(t-tm)-H(t-t2))
-  return a+b
+  
+  return a+b+noise
 
 def residuals(coeffs,y,t):
   return y - model2(t,coeffs)
@@ -74,12 +79,21 @@ amp = float(np.min(dsSmooth.real))
 tmInd = np.argmin(dsSmooth.real)
 tm = t[tmInd]
 
+# Boolian for what noise to use:
+if args['n'] is 'mean':
+  noise=np.mean(dsSmooth.real)
+elif args['n'] is 'median':
+  noise=np.median(dsSmooth.real)
+else:
+  noise=0
+
 print "Amp: ",amp
 print "tm: ",tm
+print "Noise: ",noise
 
 # Now to fit my data to my model:
 step = 50
-x0 = np.array([amp,t[tmInd-step],tm,t[tmInd+step]],dtype=float)
+x0 = np.array([amp,noise,t[tmInd-step],tm,t[tmInd+step]],dtype=float)
 x,flag = leastsq(residuals,x0,args=(dsSmooth.real,t))
 
 y_=model2(t,x)
