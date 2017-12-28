@@ -18,7 +18,7 @@ ap.add_argument("-ds",
                 required=False,
                 default='   3',
                 type = str,
-                help = "Name of specific dataset to load")
+                help = "Number of specific dataset to load. For example, if I want 'Spectra/Spectrum   3/Auxiliary/QA' I only need enter '   3'. Make note of white space, I haven't corrected this yet.")
 ap.add_argument("-t",
                 required=False,
                 default='??',
