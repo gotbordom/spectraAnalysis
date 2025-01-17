@@ -1,7 +1,10 @@
 Name: Anthony 
 Email: anthony.r.tracy@gmail.com
-Description: This was used for research to visualize HDF5 datasets.
+Description: This was used for research to visualize HDF5 datasets. 
+
 Details:
+- I wish I made better documentation back then. This looks to be from when I was doing signal analysis to clasify noise in an old hardware system.
+
 loadSpectra.py: 
   - If you run this file with an HDF5 file with the spectra it will load all the datasets into python np.arrays
     - 1st argument is hdf5 path/filename
